@@ -1,2 +1,392 @@
-# hair-quiz
-hair care quiz
+```html
+    html {
+        height: 100%;
+    }
+    
+    .quiz-container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 600px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        margin: 20px;
+    }
+    
+    h1 {
+        color: #764ba2;
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 32px;
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 16px;
+    }
+    
+    .question {
+        margin-bottom: 30px;
+    }
+    
+    .question h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 18px;
+    }
+    
+    .options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .option {
+        background: #f5f5f5;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 15px 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 16px;
+    }
+    
+    .option:hover {
+        background: #e8e8ff;
+        border-color: #667eea;
+        transform: translateX(5px);
+    }
+    
+    .option.selected {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    
+    .navigation {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+    
+    button {
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 15px 30px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    
+    button:hover {
+        background: #764ba2;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.3s ease;
+        border-radius: 10px;
+    }
+    
+    .results {
+        text-align: center;
+    }
+    
+    .results h2 {
+        color: #764ba2;
+        margin-bottom: 20px;
+        font-size: 28px;
+    }
+    
+    .results p {
+        color: #666;
+        line-height: 1.8;
+        font-size: 16px;
+        margin-bottom: 15px;
+    }
+    
+    .product-recommendations {
+        background: #f9f9ff;
+        border-radius: 15px;
+        padding: 25px;
+        margin-top: 25px;
+        text-align: left;
+    }
+    
+    .product-recommendations h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+    
+    .product-recommendations ul {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .product-recommendations li {
+        padding: 10px 0;
+        border-bottom: 1px solid #e0e0e0;
+        color: #333;
+    }
+    
+    .product-recommendations li:last-child {
+        border-bottom: none;
+    }
+    
+    .restart-btn {
+        margin-top: 30px;
+    }
+    
+    .hidden {
+        display: none;
+    }
+</style>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    
+    <div id="quizContent"></div>
+    
+    <div class="navigation">
+        <button id="prevBtn" onclick="previousQuestion()" class="hidden">← Previous</button>
+        <button id="nextBtn" onclick="nextQuestion()">Next →</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        {
+            question: "What's your hair type?",
+            options: ["Straight", "Wavy", "Curly", "Coily"]
+        },
+        {
+            question: "How would you describe your hair texture?",
+            options: ["Fine", "Medium", "Thick", "Very Thick"]
+        },
+        {
+            question: "What's your main hair concern?",
+            options: ["Dryness", "Frizz", "Damage", "Lack of Volume", "Oiliness"]
+        },
+        {
+            question: "How often do you wash your hair?",
+            options: ["Daily", "Every 2-3 days", "Once a week", "Less than once a week"]
+        },
+        {
+            question: "Do you heat style your hair?",
+            options: ["Daily", "Few times a week", "Occasionally", "Never"]
+        },
+        {
+            question: "Is your hair color-treated?",
+            options: ["Yes, bleached/highlighted", "Yes, dyed", "No, natural"]
+        }
+    ];
+
+    let currentQuestion = 0;
+    let answers = [];
+
+    function renderQuestion() {
+        const quizContent = document.getElementById('quizContent');
+        const q = questions[currentQuestion];
+        
+        quizContent.innerHTML = `
+            <div class="question">
+                <h3>Question ${currentQuestion + 1} of ${questions.length}</h3>
+                <h3>${q.question}</h3>
+                <div class="options">
+                    ${q.options.map((option, index) => `
+                        <div class="option" onclick="selectOption(${index})" id="option${index}">
+                            ${option}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        if (answers[currentQuestion] !== undefined) {
+            document.getElementById(`option${answers[currentQuestion]}`).classList.add('selected');
+        }
+        
+        updateProgress();
+        updateButtons();
+    }
+
+    function selectOption(index) {
+        document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+        document.getElementById(`option${index}`).classList.add('selected');
+        answers[currentQuestion] = index;
+        document.getElementById('nextBtn').disabled = false;
+    }
+
+    function nextQuestion() {
+        if (answers[currentQuestion] === undefined) {
+            return;
+        }
+        
+        if (currentQuestion < questions.length - 1) {
+            currentQuestion++;
+            renderQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function previousQuestion() {
+        if (currentQuestion > 0) {
+            currentQuestion--;
+            renderQuestion();
+        }
+    }
+
+    function updateButtons() {
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        if (currentQuestion === 0) {
+            prevBtn.classList.add('hidden');
+        } else {
+            prevBtn.classList.remove('hidden');
+        }
+        
+        if (answers[currentQuestion] === undefined) {
+            nextBtn.disabled = true;
+        } else {
+            nextBtn.disabled = false;
+        }
+        
+        if (currentQuestion === questions.length - 1) {
+            nextBtn.textContent = 'See Results ✨';
+        } else {
+            nextBtn.textContent = 'Next →';
+        }
+    }
+
+    function updateProgress() {
+        const progress = ((currentQuestion + 1) / questions.length) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+    }
+
+    function showResults() {
+        const hairType = questions[0].options[answers[0]];
+        const texture = questions[1].options[answers[1]];
+        const concern = questions[2].options[answers[2]];
+        const washFrequency = questions[3].options[answers[3]];
+        const heatStyling = questions[4].options[answers[4]];
+        const colorTreated = questions[5].options[answers[5]];
+
+        let routine = generateRoutine(hairType, texture, concern, washFrequency, heatStyling, colorTreated);
+
+        document.getElementById('quizContent').innerHTML = `
+            <div class="results">
+                <h2>Your Personalized Hair Care Routine</h2>
+                <p><strong>Hair Profile:</strong> ${hairType} • ${texture} • ${concern}</p>
+                ${routine}
+                <button class="restart-btn" onclick="restartQuiz()">Take Quiz Again 🔄</button>
+            </div>
+        `;
+
+        document.querySelector('.navigation').classList.add('hidden');
+    }
+
+    function generateRoutine(hairType, texture, concern, washFrequency, heatStyling, colorTreated) {
+        let products = [];
+        let tips = [];
+
+        if (concern === "Dryness") {
+            products.push("Moisturizing/Hydrating Shampoo");
+        } else if (concern === "Oiliness") {
+            products.push("Clarifying or Balancing Shampoo");
+        } else if (concern === "Damage") {
+            products.push("Repairing/Protein Shampoo");
+        } else if (concern === "Frizz") {
+            products.push("Smoothing/Anti-Frizz Shampoo");
+        } else {
+            products.push("Volumizing Shampoo");
+        }
+
+        if (texture === "Fine") {
+            products.push("Lightweight Conditioner");
+        } else {
+            products.push("Deep Conditioning Treatment");
+        }
+
+        if (concern === "Dryness" || concern === "Damage") {
+            products.push("Hair Mask (weekly)");
+            products.push("Leave-in Conditioner");
+        }
+
+        if (concern === "Frizz" || hairType === "Curly" || hairType === "Coily") {
+            products.push("Anti-Frizz Serum or Cream");
+        }
+
+        if (heatStyling === "Daily" || heatStyling === "Few times a week") {
+            products.push("Heat Protectant Spray (ESSENTIAL)");
+            tips.push("Always apply heat protectant before styling");
+        }
+
+        if (colorTreated.includes("Yes")) {
+            products.push("Color-Safe/Protecting Products");
+            tips.push("Use sulfate-free products to preserve color");
+        }
+
+        if (concern === "Lack of Volume") {
+            products.push("Volumizing Mousse or Root Lift Spray");
+        }
+
+        if (hairType === "Curly" || hairType === "Coily") {
+            products.push("Curl Defining Cream");
+            tips.push("Apply products to damp hair and scrunch");
+        }
+
+        if (washFrequency === "Daily") {
+            tips.push("Consider reducing wash frequency to preserve natural oils");
+        }
+
+        tips.push(`Recommended wash frequency: ${washFrequency.toLowerCase()}`);
+
+        return `
+            <div class="product-recommendations">
+                <h3>🛍️ Recommended Products:</h3>
+                <ul>
+                    ${products.map(p => `<li>✓ ${p}</li>`).join('')}
+                </ul>
+                
+                <h3 style="margin-top: 25px;">💡 Pro Tips:</h3>
+                <ul>
+                    ${tips.map(t => `<li>• ${t}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    function restartQuiz() {
+        currentQuestion = 0;
+        answers = [];
+        document.querySelector('.navigation').classList.remove('hidden');
+        renderQuestion();
+    }
+
+    renderQuestion();
+</script>
